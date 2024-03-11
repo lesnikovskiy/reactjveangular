@@ -1,10 +1,11 @@
-import {Component, OnInit} from '@angular/core';
-import {Course, sortCoursesBySeqNo} from '../model/course';
-import {interval, noop, Observable, of, throwError, timer} from 'rxjs';
-import {catchError, delay, delayWhen, filter, finalize, map, retryWhen, shareReplay, tap} from 'rxjs/operators';
-import {HttpClient} from '@angular/common/http';
-import {MatDialog, MatDialogConfig} from '@angular/material/dialog';
-import {CourseDialogComponent} from '../course-dialog/course-dialog.component';
+import { Component, OnInit, inject } from '@angular/core';
+import { Course, sortCoursesBySeqNo } from '../model/course';
+import { interval, noop, Observable, of, throwError, timer } from 'rxjs';
+import { catchError, delay, delayWhen, filter, finalize, map, retryWhen, shareReplay, tap } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { MatDialog, MatDialogConfig } from '@angular/material/dialog';
+import { CourseDialogComponent } from '../course-dialog/course-dialog.component';
+import { CoursesService } from '../services/courses.service';
 
 
 @Component({
@@ -12,32 +13,21 @@ import {CourseDialogComponent} from '../course-dialog/course-dialog.component';
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent {
+  private dialog = inject(MatDialog);
+  private coursesService = inject(CoursesService);
 
-  beginnerCourses: Course[];
+  courses$ = this.coursesService.loadAllCourses().pipe(
+    map(courses => courses.sort(sortCoursesBySeqNo))
+  );
 
-  advancedCourses: Course[];
+  beginnerCourses$ = this.courses$.pipe(
+    map(courses => courses.filter(course => course.category === 'BEGINNER'))
+  );
 
-
-  constructor(private http: HttpClient, private dialog: MatDialog) {
-
-  }
-
-  ngOnInit() {
-
-    this.http.get('/api/courses')
-      .subscribe(
-        res => {
-
-          const courses: Course[] = res["payload"].sort(sortCoursesBySeqNo);
-
-          this.beginnerCourses = courses.filter(course => course.category == "BEGINNER");
-
-          this.advancedCourses = courses.filter(course => course.category == "ADVANCED");
-
-        });
-
-  }
+  advancedCourses$ = this.courses$.pipe(
+    map(courses => courses.filter(course => course.category === 'ADVANCED'))
+  );
 
   editCourse(course: Course) {
 
