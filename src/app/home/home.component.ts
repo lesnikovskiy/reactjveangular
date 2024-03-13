@@ -1,29 +1,39 @@
-import { Component, inject } from '@angular/core';
-import { sortCoursesBySeqNo } from '../model/course';
+import { Component, OnInit, inject } from '@angular/core';
+import { Course, sortCoursesBySeqNo } from '../model/course';
 import { map } from 'rxjs/operators';
 import { CoursesService } from '../services/courses.service';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'home',
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
-export class HomeComponent {
+export class HomeComponent implements OnInit {
 
   private coursesService = inject(CoursesService);
 
-  courses$ = this.coursesService.loadAllCourses().pipe(
-    map(courses => courses.sort(sortCoursesBySeqNo))
-  );
+  beginnerCourses$: Observable<Course[]>;
+  advancedCourses$: Observable<Course[]>;
 
-  beginnerCourses$ = this.courses$.pipe(
-    map(courses => courses.filter(course => course.category === 'BEGINNER'))
-  );
+  ngOnInit(): void {
+    this.reloadCourses();
+  }
 
-  advancedCourses$ = this.courses$.pipe(
-    map(courses => courses.filter(course => course.category === 'ADVANCED'))
-  );
+  reloadCourses() {
+    const courses$ = this.coursesService.loadAllCourses().pipe(
+      map(courses => courses.sort(sortCoursesBySeqNo))
+    );
 
+    this.beginnerCourses$ = courses$.pipe(
+      map(courses => courses.filter(course => course.category === 'BEGINNER'))
+    );
+
+    this.advancedCourses$ = courses$.pipe(
+      map(courses => courses.filter(course => course.category === 'ADVANCED'))
+    );
+
+  }
 }
 
 
